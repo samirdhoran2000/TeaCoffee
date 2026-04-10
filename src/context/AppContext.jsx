@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState } from "react";
 import * as db from "../db/db";
+import { format } from "date-fns";
 
 const AppContext = createContext();
 
@@ -112,6 +113,72 @@ export function AppProvider({ children }) {
     setExpenses(remainingExpenses);
   };
 
+  const exportData = async () => {
+    const [allPeople, allProducts, allExpenses, allArchives] = await Promise.all([
+      db.getAll(db.STORES.PEOPLE),
+      db.getAll(db.STORES.PRODUCTS),
+      db.getAll(db.STORES.EXPENSES),
+      db.getAll(db.STORES.ARCHIVES)
+    ]);
+    
+    const dump = {
+      version: 1,
+      timestamp: new Date().toISOString(),
+      people: allPeople || [],
+      products: allProducts || [],
+      expenses: allExpenses || [],
+      archives: allArchives || []
+    };
+    
+    const blob = new Blob([JSON.stringify(dump, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `tea-tracker-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  const importData = async (jsonData) => {
+    try {
+      if (!jsonData || !jsonData.people || !jsonData.products) return false;
+      
+      setIsLoading(true);
+      await Promise.all([
+        db.clearStore(db.STORES.PEOPLE),
+        db.clearStore(db.STORES.PRODUCTS),
+        db.clearStore(db.STORES.EXPENSES),
+        db.clearStore(db.STORES.ARCHIVES)
+      ]);
+
+      const insertAll = async (storeName, dataArray) => {
+        if (!dataArray || dataArray.length === 0) return;
+        const database = await db.getDbInstance();
+        const tx = database.transaction(storeName, "readwrite");
+        const store = tx.objectStore(storeName);
+        dataArray.forEach(item => store.put(item));
+        await tx.done;
+      };
+
+      await Promise.all([
+        insertAll(db.STORES.PEOPLE, jsonData.people),
+        insertAll(db.STORES.PRODUCTS, jsonData.products),
+        insertAll(db.STORES.EXPENSES, jsonData.expenses),
+        insertAll(db.STORES.ARCHIVES, jsonData.archives)
+      ]);
+      
+      setPeople(jsonData.people || []);
+      setProducts(jsonData.products || []);
+      setExpenses(jsonData.expenses || []);
+      setIsLoading(false);
+      return true;
+    } catch (error) {
+      console.error("Import failed:", error);
+      setIsLoading(false);
+      return false;
+    }
+  };
+
   return (
     <AppContext.Provider
       value={{
@@ -128,6 +195,8 @@ export function AppProvider({ children }) {
         addExpense,
         deleteExpense,
         archiveWeek,
+        exportData,
+        importData,
       }}
     >
       {children}

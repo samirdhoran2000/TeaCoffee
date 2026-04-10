@@ -56,10 +56,19 @@ export async function saveItem(storeName, item) {
   return item;
 }
 
+
+
 export async function deleteItem(storeName, id) {
   const db = await getDbInstance();
   const tx = db.transaction(storeName, "readwrite");
   await tx.objectStore(storeName).delete(id);
+  await tx.done;
+}
+
+export async function clearStore(storeName) {
+  const db = await getDbInstance();
+  const tx = db.transaction(storeName, "readwrite");
+  await tx.objectStore(storeName).clear();
   await tx.done;
 }
 
