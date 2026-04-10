@@ -11,7 +11,7 @@ export default defineConfig({
     VitePWA({
       registerType: 'autoUpdate',
       injectRegister: 'auto',
-      includeAssets: ['favicon.png'],
+      includeAssets: ['favicon.svg'],
       manifest: {
         name: 'Tea Tracker',
         short_name: 'TeaTracker',
@@ -19,9 +19,9 @@ export default defineConfig({
         theme_color: '#f8fafc',
         icons: [
           {
-            src: 'favicon.png',
+            src: 'favicon.svg',
             sizes: '192x192 512x512',
-            type: 'image/png'
+            type: 'image/svg+xml'
           }
         ]
       }
