@@ -125,7 +125,7 @@ export function Products() {
                 <h3 className={cn("font-semibold text-lg", product.isActive ? "text-slate-800" : "text-slate-500")}>{product.name}</h3>
                 <p className="text-xl font-bold text-emerald-600">₹{product.price}</p>
               </div>
-              <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+              <div className="flex space-x-1 transition">
                 <button onClick={() => startEdit(product)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition"><Pencil className="w-4 h-4" /></button>
                 <button onClick={() => { if(window.confirm("Are you sure you want to delete this product?")) deleteProduct(product.id); }} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
               </div>

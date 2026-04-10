@@ -103,7 +103,7 @@ export function People() {
           <div key={person.id} className={cn("bg-white p-5 rounded-2xl border transition relative group shadow-sm hover:shadow-md", person.isActive ? "border-slate-200" : "border-slate-200 bg-slate-50")}>
             <div className="flex justify-between items-start mb-2">
               <h3 className={cn("font-semibold text-lg", person.isActive ? "text-slate-800" : "text-slate-500")}>{person.name}</h3>
-              <div className="flex space-x-1 opacity-0 group-hover:opacity-100 transition">
+              <div className="flex space-x-1 transition">
                 <button onClick={() => startEdit(person)} className="p-1.5 text-slate-400 hover:text-blue-600 rounded-lg hover:bg-blue-50 transition"><Pencil className="w-4 h-4" /></button>
                 <button onClick={() => { if(window.confirm("Are you sure you want to delete this person?")) deletePerson(person.id); }} className="p-1.5 text-slate-400 hover:text-red-600 rounded-lg hover:bg-red-50 transition"><Trash2 className="w-4 h-4" /></button>
               </div>
