@@ -1,13 +1,14 @@
 import React, { useState, useMemo } from "react";
 import { useApp } from "../context/AppContext";
-import { CalendarRange, Copy, CheckCircle2, ChevronLeft, ChevronRight, Archive, Trash2 } from "lucide-react";
+import { CalendarRange, Copy, CheckCircle2, ChevronLeft, ChevronRight, Archive, Trash2, MessageCircle, FileText, List } from "lucide-react";
 import { format, startOfWeek, endOfWeek, parseISO, isWithinInterval, addWeeks, subWeeks } from "date-fns";
 import { cn } from "../lib/utils";
 
 export function Summary() {
-  const { people, expenses, archiveWeek, clearWeekExpenses } = useApp();
+  const { people, expenses, archives, archiveWeek, deleteArchive, clearWeekExpenses } = useApp();
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [isCopied, setIsCopied] = useState(false);
+  const [reportType, setReportType] = useState("brief"); // "brief" or "detailed"
 
   // Calculate Monday to Friday for the selected week
   const weekStart = startOfWeek(currentWeekDate, { weekStartsOn: 1 }); // Monday
@@ -55,7 +56,7 @@ export function Summary() {
     if (aggregatedData.results.length === 0) return "No expenses for this week.";
 
     const dateRange = `${format(weekStart, "d MMM yyyy")} - ${format(weekEnd, "d MMM yyyy")}`;
-    let text = `*Week: ${dateRange}*\n\n`;
+    let text = `*Brief Summary (${dateRange})*\n\n`;
     
     aggregatedData.results.forEach(row => {
       text += `* ${row.personName}: ₹${row.total}\n`;
@@ -65,8 +66,38 @@ export function Summary() {
     return text;
   };
 
+  const generateDetailedReportText = () => {
+    if (aggregatedData.results.length === 0) return "No expenses for this week.";
+
+    const dateRange = `${format(weekStart, "d MMM yyyy")} - ${format(weekEnd, "d MMM yyyy")}`;
+    let text = `*Detailed Summary (${dateRange})*\n\n`;
+
+    // Group by person
+    aggregatedData.results.forEach(row => {
+      text += `*${row.personName} (Total: ₹${row.total})*\n`;
+      
+      // Get this person's expenses for the week
+      const personExpenses = weekExpenses.filter(e => e.personId === row.personId);
+      
+      // Sort by date
+      personExpenses.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+      personExpenses.forEach(exp => {
+        const dateStr = format(parseISO(exp.date), "EEE, MMM d");
+        const itemsStr = exp.items.map(i => `${i.itemName} (${i.quantity})`).join(", ");
+        text += `  - ${dateStr}: ${itemsStr} = ₹${exp.grandTotal}\n`;
+      });
+      text += `\n`;
+    });
+
+    text += `*Weekly Total: ₹${aggregatedData.total}*`;
+    return text;
+  };
+
+  const getActiveReport = () => reportType === "detailed" ? generateDetailedReportText() : generateReportText();
+
   const handleCopy = async () => {
-    const text = generateReportText();
+    const text = getActiveReport();
     try {
       await navigator.clipboard.writeText(text);
       setIsCopied(true);
@@ -76,10 +107,17 @@ export function Summary() {
     }
   };
 
+  const handleWhatsApp = () => {
+    const text = getActiveReport();
+    const encodedText = encodeURIComponent(text);
+    const phoneNumber = "918888634041";
+    window.open(`https://wa.me/${phoneNumber}?text=${encodedText}`, "_blank");
+  };
+
   const handleArchive = async () => {
     if (aggregatedData.results.length === 0) return;
     if (window.confirm("Do you want to save a snapshot of this week's summary into your archives?")) {
-      const text = generateReportText();
+      const text = getActiveReport();
       await archiveWeek(weekStart, weekEnd, text);
       alert("Week snapshot saved successfully!");
     }
@@ -167,6 +205,21 @@ export function Summary() {
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-semibold text-slate-800">Export Text</h3>
               <div className="flex space-x-2">
+                <div className="flex bg-slate-100 p-1 rounded-lg border border-slate-200 mr-2">
+                   <button 
+                     onClick={() => setReportType("brief")}
+                     className={cn("px-3 py-1 text-xs font-semibold rounded-md transition", reportType === "brief" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                   >
+                     Brief
+                   </button>
+                   <button 
+                     onClick={() => setReportType("detailed")}
+                     className={cn("px-3 py-1 text-xs font-semibold rounded-md transition", reportType === "detailed" ? "bg-white text-slate-800 shadow-sm" : "text-slate-500 hover:text-slate-700")}
+                   >
+                     Detailed
+                   </button>
+                </div>
+
                 <button 
                   onClick={handleClearWeek}
                   disabled={aggregatedData.results.length === 0}
@@ -201,11 +254,21 @@ export function Summary() {
                   {isCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
                   {isCopied ? "Copied!" : "Copy"}
                 </button>
+                <button 
+                  onClick={handleWhatsApp}
+                  disabled={aggregatedData.results.length === 0}
+                  className={cn(
+                    "flex items-center px-4 py-2 bg-[#25D366] text-white rounded-lg text-sm font-medium transition hover:bg-[#128C7E]",
+                    aggregatedData.results.length === 0 && "opacity-50 cursor-not-allowed"
+                  )}
+                >
+                  <MessageCircle className="w-4 h-4 mr-2" /> WhatsApp
+                </button>
               </div>
             </div>
             
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 relative font-mono text-sm text-slate-700 whitespace-pre-wrap leading-relaxed">
-              {generateReportText()}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 relative font-mono text-sm text-slate-700 whitespace-pre-wrap leading-relaxed overflow-y-auto max-h-[400px]">
+              {getActiveReport()}
             </div>
             <p className="text-xs text-slate-500 mt-3 text-center">
               Copy this text and paste it into Whatsapp or Email directly to your Admin.
@@ -213,6 +276,43 @@ export function Summary() {
           </div>
 
         </div>
+      </div>
+
+      {/* Archives Section */}
+      <div className="mt-12 space-y-6">
+        <h2 className="text-2xl font-bold text-slate-800 flex items-center">
+          <Archive className="w-6 h-6 mr-2 text-emerald-600" /> Past Archives
+        </h2>
+        
+        {!archives || archives.length === 0 ? (
+          <div className="bg-white p-10 text-center text-slate-400 rounded-2xl border border-dashed border-slate-200">
+            No archives saved yet.
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-10">
+            {archives.map(archive => (
+              <div key={archive.id} className="bg-white p-5 rounded-2xl border border-slate-200 shadow-sm relative group">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                      {format(new Date(archive.weekStartDate), "MMM d")} - {format(new Date(archive.weekEndDate), "MMM d, yyyy")}
+                    </p>
+                    <p className="text-xs text-slate-400">Created: {format(new Date(archive.createdAt), "PPp")}</p>
+                  </div>
+                  <button 
+                    onClick={() => { if(window.confirm("Permanently delete this archive snapshot?")) deleteArchive(archive.id); }}
+                    className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
+                <div className="bg-slate-50 p-3 rounded-lg font-mono text-xs text-slate-600 whitespace-pre-wrap max-h-40 overflow-y-auto border border-slate-100">
+                  {archive.summarySnapshot}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
