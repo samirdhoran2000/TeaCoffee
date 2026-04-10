@@ -96,11 +96,13 @@ export function AppProvider({ children }) {
       createdAt: new Date().toISOString(),
     };
     await db.saveItem(db.STORES.ARCHIVES, archiveRecord);
+    // Expenses are NO longer deleted here automatically
+  };
 
+  const clearWeekExpenses = async (weekStart, weekEnd) => {
     const fromDate = new Date(weekStart).getTime();
     const toDate = new Date(weekEnd).getTime();
 
-    // Remove expenses for this week to clear up data
     const remainingExpenses = [];
     for (const exp of expenses) {
       const expDate = new Date(exp.date).getTime();
@@ -195,6 +197,7 @@ export function AppProvider({ children }) {
         addExpense,
         deleteExpense,
         archiveWeek,
+        clearWeekExpenses,
         exportData,
         importData,
       }}

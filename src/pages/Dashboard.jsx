@@ -1,9 +1,9 @@
 import React, { useMemo } from "react";
 import { useApp } from "../context/AppContext";
 import { isToday, isThisWeek, parseISO } from "date-fns";
-import { Users, Receipt, TrendingUp, IndianRupee, Download, Upload } from "lucide-react";
+import { Users, Receipt, TrendingUp, IndianRupee, Download, Upload, CalendarRange, ShoppingBag } from "lucide-react";
 
-export function Dashboard() {
+export function Dashboard({ setActiveTab }) {
   const { people, expenses, isLoading, exportData, importData } = useApp();
 
   const metrics = useMemo(() => {
@@ -89,6 +89,27 @@ export function Dashboard() {
             <p className="text-3xl font-bold text-slate-800">{metrics.activePeople}</p>
           </div>
         </div>
+      </div>
+
+      <h2 className="text-2xl font-bold text-slate-800 mt-10">Quick Actions</h2>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        {[
+          { id: "expenses", label: "Add Entry", icon: Receipt, color: "text-emerald-600", bg: "bg-emerald-50" },
+          { id: "summary", label: "Summary", icon: CalendarRange, color: "text-blue-600", bg: "bg-blue-50" },
+          { id: "people", label: "Members", icon: Users, color: "text-purple-600", bg: "bg-purple-50" },
+          { id: "products", label: "Items", icon: ShoppingBag, color: "text-amber-600", bg: "bg-amber-50" },
+        ].map((action) => (
+          <button
+            key={action.id}
+            onClick={() => setActiveTab && setActiveTab(action.id)}
+            className="flex flex-col items-center justify-center p-6 bg-white border border-slate-200 rounded-2xl shadow-sm hover:shadow-md transition group"
+          >
+            <div className={`p-4 rounded-xl ${action.bg} mb-3 group-hover:scale-110 transition-transform`}>
+              <action.icon className={`w-8 h-8 ${action.color}`} />
+            </div>
+            <span className="font-medium text-slate-700">{action.label}</span>
+          </button>
+        ))}
       </div>
 
       <h2 className="text-2xl font-bold text-slate-800 mt-10">Data Management</h2>

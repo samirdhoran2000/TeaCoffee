@@ -1,11 +1,11 @@
 import React, { useState, useMemo } from "react";
 import { useApp } from "../context/AppContext";
-import { CalendarRange, Copy, CheckCircle2, ChevronLeft, ChevronRight, Archive } from "lucide-react";
+import { CalendarRange, Copy, CheckCircle2, ChevronLeft, ChevronRight, Archive, Trash2 } from "lucide-react";
 import { format, startOfWeek, endOfWeek, parseISO, isWithinInterval, addWeeks, subWeeks } from "date-fns";
 import { cn } from "../lib/utils";
 
 export function Summary() {
-  const { people, expenses, archiveWeek } = useApp();
+  const { people, expenses, archiveWeek, clearWeekExpenses } = useApp();
   const [currentWeekDate, setCurrentWeekDate] = useState(new Date());
   const [isCopied, setIsCopied] = useState(false);
 
@@ -78,10 +78,18 @@ export function Summary() {
 
   const handleArchive = async () => {
     if (aggregatedData.results.length === 0) return;
-    if (window.confirm("Are you sure you want to archive this week and clear its expenses from the active record?")) {
+    if (window.confirm("Do you want to save a snapshot of this week's summary into your archives?")) {
       const text = generateReportText();
       await archiveWeek(weekStart, weekEnd, text);
-      alert("Week successfully archived and active records cleared!");
+      alert("Week snapshot saved successfully!");
+    }
+  };
+
+  const handleClearWeek = async () => {
+    if (aggregatedData.results.length === 0) return;
+    if (window.confirm("WARNING: This will permanently delete all expense entries for this week. Are you sure you want to clear them?")) {
+      await clearWeekExpenses(weekStart, weekEnd);
+      alert("Week expenses deleted.");
     }
   };
 
@@ -129,8 +137,8 @@ export function Summary() {
                 No data for this week.
               </div>
             ) : (
-              <div className="overflow-hidden border border-slate-200 rounded-xl">
-                <table className="w-full text-left text-sm">
+              <div className="overflow-x-auto border border-slate-200 rounded-xl">
+                <table className="w-full text-left text-sm whitespace-nowrap">
                   <thead className="bg-slate-50 text-slate-600">
                     <tr>
                       <th className="px-4 py-3 font-semibold">Person</th>
@@ -160,13 +168,24 @@ export function Summary() {
               <h3 className="text-lg font-semibold text-slate-800">Export Text</h3>
               <div className="flex space-x-2">
                 <button 
-                  onClick={handleArchive}
+                  onClick={handleClearWeek}
                   disabled={aggregatedData.results.length === 0}
                   className={cn(
                     "flex items-center px-4 py-2 rounded-lg text-sm font-medium transition border border-red-200 text-red-600 hover:bg-red-50",
                     aggregatedData.results.length === 0 && "opacity-50 cursor-not-allowed"
                   )}
-                  title="Archive and Clear Data"
+                  title="Clear Weekly Data"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={handleArchive}
+                  disabled={aggregatedData.results.length === 0}
+                  className={cn(
+                    "flex items-center px-4 py-2 rounded-lg text-sm font-medium transition border border-slate-200 text-slate-600 hover:bg-slate-50",
+                    aggregatedData.results.length === 0 && "opacity-50 cursor-not-allowed"
+                  )}
+                  title="Save Snapshot to Archives"
                 >
                   <Archive className="w-4 h-4" />
                 </button>
@@ -180,7 +199,7 @@ export function Summary() {
                   )}
                 >
                   {isCopied ? <CheckCircle2 className="w-4 h-4 mr-2" /> : <Copy className="w-4 h-4 mr-2" />}
-                  {isCopied ? "Copied!" : "Copy to Clipboard"}
+                  {isCopied ? "Copied!" : "Copy"}
                 </button>
               </div>
             </div>

@@ -12,7 +12,7 @@ function MainContent() {
 
   return (
     <Shell activeTab={activeTab} setActiveTab={setActiveTab}>
-      {activeTab === "dashboard" && <Dashboard />}
+      {activeTab === "dashboard" && <Dashboard setActiveTab={setActiveTab} />}
       {activeTab === "people" && <People />}
       {activeTab === "products" && <Products />}
       {activeTab === "expenses" && <Expenses />}

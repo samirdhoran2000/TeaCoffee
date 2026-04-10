@@ -1,20 +1,18 @@
-import React, { useState } from "react";
-import { Coffee, Users, ShoppingBag, Receipt, CalendarRange, Menu, X } from "lucide-react";
+import React from "react";
+import { Coffee, Users, ShoppingBag, Receipt, CalendarRange } from "lucide-react";
 import { cn } from "../../lib/utils";
 
 const NAV_ITEMS = [
-  { id: "dashboard", label: "Dashboard", icon: Coffee },
-  { id: "expenses", label: "Expenses", icon: Receipt },
-  { id: "summary", label: "Weekly Summary", icon: CalendarRange },
+  { id: "dashboard", label: "Overview", icon: Coffee },
+  { id: "expenses", label: "Entry", icon: Receipt },
+  { id: "summary", label: "Summary", icon: CalendarRange },
   { id: "people", label: "People", icon: Users },
-  { id: "products", label: "Products", icon: ShoppingBag },
+  { id: "products", label: "Items", icon: ShoppingBag },
 ];
 
 export function Shell({ activeTab, setActiveTab, children }) {
-  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
   return (
-    <div className="flex h-screen bg-slate-50 text-slate-900 font-sans">
+    <div className="flex h-[100dvh] bg-slate-50 text-slate-900 font-sans pb-[72px] md:pb-0">
       {/* Sidebar for Desktop */}
       <aside className="hidden md:flex w-64 flex-col bg-white border-r border-slate-200">
         <div className="h-16 flex items-center px-6 border-b border-slate-100">
@@ -46,55 +44,36 @@ export function Shell({ activeTab, setActiveTab, children }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         {/* Mobile Header */}
-        <header className="md:hidden flex items-center justify-between h-16 px-4 bg-white border-b border-slate-200">
-          <div className="flex items-center">
-            <Coffee className="w-6 h-6 text-emerald-600 mr-2" />
-            <h1 className="font-bold text-lg text-slate-800">Tea Tracker</h1>
-          </div>
-          <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 -mr-2 text-slate-500 hover:bg-slate-100 rounded-lg">
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+        <header className="md:hidden flex items-center justify-center h-14 bg-white border-b border-slate-200 shrink-0">
+          <Coffee className="w-5 h-5 text-emerald-600 mr-2" />
+          <h1 className="font-bold text-lg text-slate-800">Tea Tracker</h1>
         </header>
-
-        {/* Mobile Menu Dropdown */}
-        {isMobileMenuOpen && (
-          <div className="md:hidden absolute top-16 left-0 right-0 z-50 bg-white border-b border-slate-200 shadow-sm animate-in fade-in slide-in-from-top-2">
-            <nav className="p-4 space-y-2">
-              {NAV_ITEMS.map((item) => (
-                <button
-                  key={item.id}
-                  onClick={() => {
-                    setActiveTab(item.id);
-                    setIsMobileMenuOpen(false);
-                  }}
-                  className={cn(
-                    "w-full flex items-center px-4 py-3 rounded-xl text-base font-medium",
-                    activeTab === item.id
-                      ? "bg-emerald-50 text-emerald-700"
-                      : "text-slate-600 hover:bg-slate-50"
-                  )}
-                >
-                  <item.icon className={cn("w-5 h-5 mr-3", activeTab === item.id ? "text-emerald-600" : "text-slate-400")} />
-                  {item.label}
-                </button>
-              ))}
-            </nav>
-          </div>
-        )}
-
-        {/* Overlay when mobile menu is open */}
-        {isMobileMenuOpen && (
-          <div 
-             className="md:hidden absolute inset-0 top-16 z-40 bg-slate-900/20 backdrop-blur-sm"
-             onClick={() => setIsMobileMenuOpen(false)}
-          />
-        )}
 
         <main className="flex-1 overflow-y-auto bg-slate-50 p-4 md:p-8">
           <div className="max-w-5xl mx-auto">
             {children}
           </div>
         </main>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
+      <div className="md:hidden fixed bottom-0 left-0 right-0 h-[72px] bg-white border-t border-slate-200 flex items-center justify-around px-2 z-50 rounded-t-2xl shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] pb-safe">
+        {NAV_ITEMS.map((item) => {
+          const isActive = activeTab === item.id;
+          return (
+            <button
+              key={item.id}
+              onClick={() => setActiveTab(item.id)}
+              className={cn(
+                "flex flex-col items-center justify-center w-full h-full space-y-1 transition-all",
+                isActive ? "text-emerald-600" : "text-slate-400 hover:text-slate-600"
+              )}
+            >
+              <item.icon className={cn("transition-all duration-300", isActive ? "w-6 h-6" : "w-5 h-5")} />
+              <span className={cn("text-[10px] font-medium tracking-wide", isActive && "font-bold text-emerald-700")}>{item.label}</span>
+            </button>
+          );
+        })}
       </div>
     </div>
   );
